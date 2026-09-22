@@ -4,12 +4,32 @@
 
 ## 运行
 
+需要 Node.js 20.19+ 或 22.12+ 的受支持版本，建议使用 Node.js 24（本项目的验证环境）。npm 随 Node.js 一起安装。
+
+1. 在 GitHub 点击 **Code → Download ZIP**，解压下载文件；也可以使用 `git clone`。
+2. 打开解压后的项目文件夹（其中应能看到 `package.json`），在该目录打开终端。
+3. 首次运行时联网安装依赖，然后启动：
+
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-打开终端提示的本地地址即可。生产构建使用 `npm run build`，单元测试使用 `npm test`。
+`npm ci` 根据提交的 `package-lock.json` 安装确定版本的依赖；后续启动只需 `npm run dev`。无需全局安装 Vue 或 Vite，无需数据库、账号或环境变量。
+
+打开终端显示的本地地址，通常是 `http://127.0.0.1:5173/`。如端口占用，使用终端提示的其他端口。保持终端运行，按 `Ctrl+C` 停止。不要直接双击 `index.html`。
+
+## 验证与构建
+
+```bash
+npm test
+npm run build
+npm run preview
+```
+
+构建产物位于 `dist`，预览地址以终端输出为准。`node_modules` 和 `dist` 不提交，由上述命令生成。
+
+任务和主题保存在当前浏览器对应地址的 localStorage 中，不会上传到 GitHub。首次打开为空列表；换浏览器、主机名或端口后，存储数据彼此独立。清除网站数据会删除保存的任务。
 
 ## 课堂演示流程
 
@@ -23,4 +43,5 @@ npm run dev
 
 - `bfd2293`：Vue/Vite/Tailwind 项目骨架和基础页面。
 - `c334b1e`：任务增删改查、表单校验、详情与删除确认。
-- 当前轮：localStorage 持久化、主题记忆、看板和拖拽交互、错误恢复提示。
+- `0baca19`：localStorage 持久化、主题记忆、看板和拖拽交互、错误恢复提示。
+- 交付检查：完善下载运行说明，修复拖拽取消后的状态清理，验证测试与生产构建。

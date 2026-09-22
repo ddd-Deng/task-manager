@@ -20,7 +20,17 @@ const draggingId = ref(null)
 function openForm(task = null) { editing.value = task; viewing.value = null; formOpen.value = true }
 function save(fields, id) { if (saveTask(fields, id)) { formOpen.value = false; notice.value = unsaved.value ? '任务已更新，但尚未保存到浏览器' : (id ? '任务已更新并保存' : '任务已创建并保存') } }
 function confirmDelete() { removeTask(deleting.value.id); deleting.value = null; notice.value = '任务已删除' }
-function dragMove(event, value) { if (typeof value === 'string' && draggingId.value) { moveTask(draggingId.value, value); draggingId.value = null; notice.value = '任务状态已更新' } else if (event?.dataTransfer) { draggingId.value = value; event.dataTransfer.effectAllowed = 'move' } }
+function startDrag(event, id) {
+  draggingId.value = id
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/plain', id)
+}
+function dropTask(status) {
+  if (!draggingId.value) return
+  moveTask(draggingId.value, status)
+  draggingId.value = null
+  notice.value = unsaved.value ? '任务状态已更新，但尚未保存到浏览器' : '任务状态已更新并保存'
+}
 function protectUnsaved(event) { if (unsaved.value || unsavedTheme.value) { event.preventDefault(); event.returnValue = '' } }
 onMounted(() => window.addEventListener('beforeunload', protectUnsaved))
 onBeforeUnmount(() => window.removeEventListener('beforeunload', protectUnsaved))
@@ -38,7 +48,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', protectUnsaved)
       <p class="sr-only" role="status">{{ notice }}</p>
       <div v-if="!tasks.length" class="empty-state"><span class="empty-icon">✓</span><h2>{{ loadFailed ? '暂时无法读取任务' : '从第一个任务开始' }}</h2><p>{{ loadFailed ? '为保护原有数据，已暂停创建任务。恢复存储后点击重试。' : '将待办事项整理在这里，专注当下的每一步。' }}</p><button v-if="!loadFailed" class="button secondary" @click="openForm()">创建第一个任务</button></div>
       <TaskList v-if="tasks.length && view === 'list'" :tasks="tasks" @view="viewing = $event" @edit="openForm" @delete="deleting = $event" />
-      <TaskBoard v-if="tasks.length && view === 'board'" :tasks="tasks" @view="viewing = $event" @edit="openForm" @delete="deleting = $event" @move="dragMove" />
+      <TaskBoard v-if="tasks.length && view === 'board'" :tasks="tasks" @view="viewing = $event" @edit="openForm" @delete="deleting = $event" @drag-start="startDrag" @drag-end="draggingId = null" @drop-task="dropTask" />
     </main>
     <footer><span class="save-indicator" :class="{ warning: storageError }">{{ storageError ? '任务存储异常' : '数据保存在当前浏览器' }}</span><span>有序 · 留一点空间，给重要的事</span></footer>
   </div>

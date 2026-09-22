@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+:root { font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif; color: #242938; background: #f5f6f8; font-synthesis: none; --bg: #f5f6f8; --surface: #fff; --text: #242938; --muted: #717789; --border: #e7e9ef; --soft: #f0f1f6; --accent: #5951df; --accent-soft: #eeedff; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 360px; }
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid #9893f7; outline-offset: 3px; }
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.topbar { height: 82px; padding: 0 5%; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.brand { display: flex; align-items: center; gap: 12px; font-size: 23px; font-weight: 750; text-decoration: none; color: var(--text); }
+.brand-mark { display: grid; place-items: center; width: 36px; height: 36px; background: var(--accent); color: white; border-radius: 11px; font-size: 23px; }
+.brand-sub { border-left: 1px solid var(--border); padding-left: 16px; margin-left: 8px; font-size: 10px; letter-spacing: 2px; color: var(--muted); font-weight: 600; }
+.local-label { font-size: 12px; color: var(--muted); }
+.workspace { width: min(1280px, 90%); margin: 52px auto; flex: 1; }
+.eyebrow { color: var(--accent); letter-spacing: 2px; font-size: 11px; font-weight: 700; margin: 0 0 10px; }
+h1 { font-size: 34px; letter-spacing: -1px; font-weight: 750; margin: 0; }
+.subtitle { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
+.empty-state { text-align: center; padding: 75px 24px; margin-top: 28px; border: 1px solid var(--border); background: var(--surface); border-radius: 16px; }
+.empty-icon { display: inline-grid; place-items: center; width: 60px; height: 60px; border-radius: 18px; color: var(--accent); background: var(--accent-soft); font-size: 28px; margin-bottom: 20px; }
+.empty-state h2 { font-size: 19px; font-weight: 650; }
+.empty-state p { font-size: 13px; color: var(--muted); margin: 12px 0 24px; }
+footer { text-align: center; color: var(--muted); font-size: 11px; padding: 0 24px 26px; letter-spacing: 1px; }

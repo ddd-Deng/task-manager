@@ -1,34 +1,46 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import TaskList from './components/TaskList.vue'
+import TaskBoard from './components/TaskBoard.vue'
 import TaskForm from './components/TaskForm.vue'
 import AppModal from './components/AppModal.vue'
 import { useTasks } from './composables/useTasks.js'
+import { useTheme } from './composables/useTheme.js'
 import { STATUSES, PRIORITIES } from './domain/tasks.js'
 
-const { tasks, saveTask, removeTask } = useTasks()
+const { tasks, storageError, loadFailed, unsaved, retryStorage, saveTask, removeTask, moveTask } = useTasks()
+const { theme, themeError, unsavedTheme, toggleTheme, retryTheme } = useTheme()
 const formOpen = ref(false)
 const editing = ref(null)
 const viewing = ref(null)
 const deleting = ref(null)
 const notice = ref('')
+const view = ref('list')
+const draggingId = ref(null)
 function openForm(task = null) { editing.value = task; viewing.value = null; formOpen.value = true }
-function save(fields, id) { saveTask(fields, id); formOpen.value = false; notice.value = id ? '任务已更新' : '任务已创建' }
+function save(fields, id) { if (saveTask(fields, id)) { formOpen.value = false; notice.value = unsaved.value ? '任务已更新，但尚未保存到浏览器' : (id ? '任务已更新并保存' : '任务已创建并保存') } }
 function confirmDelete() { removeTask(deleting.value.id); deleting.value = null; notice.value = '任务已删除' }
+function dragMove(event, value) { if (typeof value === 'string' && draggingId.value) { moveTask(draggingId.value, value); draggingId.value = null; notice.value = '任务状态已更新' } else if (event?.dataTransfer) { draggingId.value = value; event.dataTransfer.effectAllowed = 'move' } }
+function protectUnsaved(event) { if (unsaved.value || unsavedTheme.value) { event.preventDefault(); event.returnValue = '' } }
+onMounted(() => window.addEventListener('beforeunload', protectUnsaved))
+onBeforeUnmount(() => window.removeEventListener('beforeunload', protectUnsaved))
 </script>
 
 <template>
   <div class="app-shell">
-    <header class="topbar"><a class="brand" href="./"><span class="brand-mark">✓</span>有序<span class="brand-sub">TASK MANAGER</span></a><span class="local-label">个人工作空间</span></header>
+    <header class="topbar"><a class="brand" href="./"><span class="brand-mark">✓</span>有序<span class="brand-sub">TASK MANAGER</span></a><div class="flex items-center gap-5"><span class="local-label workspace-label">个人工作空间</span><button class="theme-toggle" :aria-label="theme === 'light' ? '切换深色模式' : '切换浅色模式'" :aria-pressed="theme === 'dark'" @click="toggleTheme"><span aria-hidden="true">{{ theme === 'light' ? '☾' : '☀' }}</span><span>{{ theme === 'light' ? '深色模式' : '浅色模式' }}</span></button></div></header>
     <main class="workspace">
       <p class="eyebrow">MY WORKSPACE</p>
-      <div class="page-heading"><div><h1>我的任务</h1><p class="subtitle">把想法变成行动，让每一步都有条不紊。</p></div><button class="button primary" @click="openForm()"><span class="plus" aria-hidden="true">+</span> 新建任务</button></div>
-      <div class="toolbar"><span class="section-label">任务列表 <span class="count">{{ tasks.length }}</span></span><span class="local-label">按创建顺序排列</span></div>
+      <div class="page-heading"><div><h1>我的任务</h1><p class="subtitle">把想法变成行动，让每一步都有条不紊。</p></div><button class="button primary" :disabled="loadFailed" @click="openForm()"><span class="plus" aria-hidden="true">+</span> 新建任务</button></div>
+      <div v-if="storageError" class="error-banner" role="alert"><span>{{ storageError }}</span><button class="button secondary" @click="retryStorage">重试任务存储</button></div>
+      <div v-if="themeError" class="error-banner" role="alert"><span>{{ themeError }}</span><button class="button secondary" @click="retryTheme">重试主题存储</button></div>
+      <div class="toolbar"><span class="section-label">{{ view === 'list' ? '任务列表' : '任务看板' }} <span class="count">{{ tasks.length }}</span></span><div class="view-switch" role="tablist" aria-label="任务视图"><button :class="{ active: view === 'list' }" role="tab" :aria-selected="view === 'list'" @click="view = 'list'">列表</button><button :class="{ active: view === 'board' }" role="tab" :aria-selected="view === 'board'" @click="view = 'board'">看板</button></div></div>
       <p class="sr-only" role="status">{{ notice }}</p>
-      <div v-if="!tasks.length" class="empty-state"><span class="empty-icon">✓</span><h2>从第一个任务开始</h2><p>将待办事项整理在这里，专注当下的每一步。</p><button class="button secondary" @click="openForm()">创建第一个任务</button></div>
-      <TaskList v-else :tasks="tasks" @view="viewing = $event" @edit="openForm" @delete="deleting = $event" />
+      <div v-if="!tasks.length" class="empty-state"><span class="empty-icon">✓</span><h2>{{ loadFailed ? '暂时无法读取任务' : '从第一个任务开始' }}</h2><p>{{ loadFailed ? '为保护原有数据，已暂停创建任务。恢复存储后点击重试。' : '将待办事项整理在这里，专注当下的每一步。' }}</p><button v-if="!loadFailed" class="button secondary" @click="openForm()">创建第一个任务</button></div>
+      <TaskList v-if="tasks.length && view === 'list'" :tasks="tasks" @view="viewing = $event" @edit="openForm" @delete="deleting = $event" />
+      <TaskBoard v-if="tasks.length && view === 'board'" :tasks="tasks" @view="viewing = $event" @edit="openForm" @delete="deleting = $event" @move="dragMove" />
     </main>
-    <footer>有序 · 留一点空间，给重要的事</footer>
+    <footer><span class="save-indicator" :class="{ warning: storageError }">{{ storageError ? '任务存储异常' : '数据保存在当前浏览器' }}</span><span>有序 · 留一点空间，给重要的事</span></footer>
   </div>
   <TaskForm v-if="formOpen" :task="editing" @save="save" @close="formOpen = false" />
   <AppModal v-if="viewing" title="任务详情" @close="viewing = null">
